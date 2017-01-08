@@ -11,8 +11,6 @@
   /* Namespace our application for later assignment to window */
   var PeopleList = {};
 
-  PeopleList.Person = Backbone.Model.extend();
-
   /**
     * Build a DOM element to represent a Person
     * Represents a single person, e.g.
@@ -26,7 +24,7 @@
     * }
    */
   PeopleList.PersonView = Backbone.View.extend({
-    model: PeopleList.Person,
+    // model: PeopleList.Person,
     // Cache the template function for a single item.
     template: _.template($("#person-tpl").html()),
 
@@ -44,13 +42,13 @@
     /*
      * Apply a filter to the collection–join with `and`. Expected format:
     */
-    //case-insensitive where
-    whereLike: function(attrs, first){
+    whereLike: function(attrs){
       if (_.isEmpty(attrs)) return this;
-      return this[first ? 'find' : 'filter'](function(model) {
+      return this.filter(function(model) {
         for (var key in attrs) {
-          var keyLower = model.get(key).toLowerCase();
-          if (keyLower.substring(attrs[key].toLowerCase())) return false;
+          if (model.get(key).toLowerCase().indexOf(attrs[key].toLowerCase()) === -1) {
+           return false;
+          }
         }
         return true;
       });
@@ -58,13 +56,8 @@
 
   });
 
-  PeopleList.Filter = Backbone.Model.extend();
-
   PeopleList.FilterCollection = Backbone.Collection.extend({
-    // Reference to this collection's model.
-    model: PeopleList.Filter,
     url: "/filters",
-
     /**
     * {
      *  "city": "hollywood",
