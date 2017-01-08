@@ -40,30 +40,44 @@
    * Represents a filterable group of people
   */
   PeopleList.PersonCollection = Backbone.Collection.extend({
+    url: "/persons",
     /*
-     * PeopleListly a filter to the collection. Expected format:
-     * {
-     *  "city": "hollywood",
-     *  "state": "ca"
-     * }
+     * Apply a filter to the collection–join with `and`. Expected format:
     */
-    filter: function(filter) {
-      console.log(true);
-      // return this.where({done: true});
-    }
+    //case-insensitive where
+    whereLike: function(attrs, first){
+      if (_.isEmpty(attrs)) return this;
+      return this[first ? 'find' : 'filter'](function(model) {
+        for (var key in attrs) {
+          var keyLower = model.get(key).toLowerCase();
+          if (keyLower.substring(attrs[key].toLowerCase())) return false;
+        }
+        return true;
+      });
+    },
+
   });
 
   PeopleList.Filter = Backbone.Model.extend();
 
   PeopleList.FilterCollection = Backbone.Collection.extend({
-
     // Reference to this collection's model.
     model: PeopleList.Filter,
+    url: "/filters",
 
-    // Filter down the list of all todo items that are finished.
+    /**
+    * {
+     *  "city": "hollywood",
+     *  "state": "ca"
+     * }
+     */
     getCriteria: function() {
-      return this.where({enabled: true});
+      return this.where({enabled: true}).reduce(function(list, obj){
+        return _.extend(list, obj.attributes.criteria);
+      }, {});
     },
+    // Todos are sorted by their original insertion order.
+    comparator: 'order'
   });
 
   PeopleList.FilterView = Backbone.View.extend({
@@ -76,9 +90,13 @@
       "click .form-check-input" : "toggleFilter",
     },
 
+    initialize: function() {
+      this.listenTo(this.model, 'all', this.peopleRender);
+    },
+
     toggleFilter: function() {
       this.model.set("enabled", !this.model.get("enabled"));
-      PeopleList.trigger("filtertoggle", this.getCriteria);
+      PeopleList.trigger("toggle:filter");
     },
 
     // Turn the Person model into HTML and add it to our wrapping element.
@@ -90,22 +108,21 @@
   /**
    * Represents the List of People with filters
    */
-  PeopleList.TableView = Backbone.View.extend({
+  PeopleList.TableController = Backbone.View.extend({
     el: '#persons-list',
     filterEl: '#filters-list',
 
     initialize: function() {
-      this.listenTo(PeopleList.people, 'all', this.peopleRender);
+      this.listenTo(PeopleList.people, 'update', this.peopleRender);
       this.listenTo(PeopleList.filters, 'add', this.filtersRender);
-      PeopleList.on("filtertoggle", this.filterPeople, this);
-    },
-
-    filterPeople: function(criteria) {
-      PeopleList.people.filter(criteria);
+      PeopleList.on("toggle:filter", this.peopleRender, this);
     },
 
     peopleRender: function() {
-      this.$el.html(PeopleList.people.map(function(person) {
+      var peopleFiltered = PeopleList.people.whereLike(
+        PeopleList.filters.getCriteria()
+      );
+      this.$el.html(peopleFiltered.map(function(person) {
         return new PeopleList.PersonView({model:person}).render();
       }));
       return this;
@@ -126,11 +143,11 @@
     PeopleList.filters = new PeopleList.FilterCollection();
 
     /* Setup our listeners */
-    new PeopleList.TableView();
+    new PeopleList.TableController();
 
     /* Add our initial data  - this will trigger a render */
-    PeopleList.people.set(bootstrapData.persons);
     PeopleList.filters.set(bootstrapData.filters);
+    PeopleList.people.set(bootstrapData.persons);
   };
 
   _.extend(PeopleList, Backbone.Events);
