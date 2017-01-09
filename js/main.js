@@ -81,7 +81,7 @@
 
     // When the filter on/off checkbox is clicked...
     events: {
-      "click .form-check-input" : "toggleFilter",
+      "click [data-filter]" : "toggleFilter",
     },
 
    // Toggle the model. Selection of all enabled is in the collection.
