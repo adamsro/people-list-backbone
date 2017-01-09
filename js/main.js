@@ -8,7 +8,7 @@
 (function(window, $){
   'use strict';
 
-  /* Namespace our application for later assignment to window */
+  // Namespace our application for later assignment to window.
   var PeopleList = {};
 
   /**
@@ -54,7 +54,6 @@
         return true;
       });
     },
-
   });
 
   PeopleList.FilterCollection = Backbone.Collection.extend({
@@ -62,6 +61,7 @@
     /**
      * @return {object} flat list of all criteria.
      * {
+     *  "lastName": "moss"
      *  "city": "hollywood",
      *  "state": "ca"
      * }
@@ -71,8 +71,6 @@
         return _.extend(list, obj.attributes.criteria);
       }, {});
     },
-    // Filters are sorted by their original insertion order.
-    comparator: 'order'
   });
 
   PeopleList.FilterView = Backbone.View.extend({
@@ -140,6 +138,10 @@
   PeopleList.run = function(bootstrapData) {
     // Init our collections of people and filters
     PeopleList.people = new PeopleList.PersonCollection();
+    // Sort ascending alphabetical on last name.
+    PeopleList.people.comparator = function(model) {
+      return model.get("lastName");
+    };
     PeopleList.filters = new PeopleList.FilterCollection();
 
     // Setup our listeners
