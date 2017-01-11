@@ -105,7 +105,7 @@
 
     initialize: function() {
       this.listenTo(PeopleList.people, 'update', this.peopleRender);
-      this.listenTo(PeopleList.filters, 'add', this.filtersRender);
+      this.listenTo(PeopleList.filters, 'update', this.filtersRender);
       PeopleList.on("toggle:filter", this.peopleRender, this);
     },
 
